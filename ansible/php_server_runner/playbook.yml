@@ -1,0 +1,57 @@
+---
+- hosts: node_vms
+  become: yes
+  tasks:
+    - name: 'Install PHP and required packages'
+      ansible.builtin.package:
+        name:
+          - php
+          - php-cli
+        state: present
+
+    - name: 'Delete everything from /var/www/html'
+      ansible.builtin.file:
+        path: /var/www/html
+        state: absent
+
+    - name: 'Create new folder for index.php'
+      ansible.builtin.file:
+        path: /var/www/public
+        state: directory
+        mode: '0755'
+
+    - name: 'Create index.php file'
+      ansible.builtin.file:
+        path: /var/www/public/index.php
+        state: touch
+        mode: '0755'
+
+    - name: 'Add sample content to index.php'
+      ansible.builtin.copy:
+        content: |
+          <?php
+          echo "Hello, World! This is a PHP test page running on hostname: {{ ansible_hostname }}";
+          ?>
+        dest: /var/www/public/index.php
+        mode: '0755'
+
+    - name: 'Ensure no existing PHP server is running on port 8000'
+      ansible.builtin.command: pkill -f "php -S 0.0.0.0:8000"
+      ignore_errors: yes
+
+    - name: 'Start PHP development server'
+      ansible.builtin.shell: |
+        nohup php -S 0.0.0.0:8000 -t /var/www/public &
+      args:
+        chdir: /var/www/public
+      async: 45
+      poll: 0
+      register: php_server
+
+    - name: 'Verify PHP server is running'
+      ansible.builtin.wait_for:
+        host: 0.0.0.0
+        port: 8000
+        state: started
+        timeout: 10
+      ignore_errors: yes

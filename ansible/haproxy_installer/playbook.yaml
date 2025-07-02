@@ -1,0 +1,5 @@
+- hosts: master_vms
+  become: yes
+  tasks:
+    - name: 'install haproxy'
+      apt: name=haproxy update_cache=yes state=latest

@@ -1,0 +1,3 @@
+.vagrant
+haproxy/haproxy_source
+haproxy/haproxy_config/errors/*
